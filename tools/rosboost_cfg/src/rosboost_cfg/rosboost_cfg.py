@@ -212,12 +212,21 @@ def find_lib(ver, name, full_lib = link_static):
     static_search_paths = []
     
     if (ver.is_system_install):
-        dynamic_search_paths = ["libboost_%s-mt.%s"%(name, lib_suffix),
+        if os.name == "nt":
+            dynamic_search_paths = ["boost_%s-mt.%s"%(name, lib_suffix),
+                                "boost_%s.%s"%(name, lib_suffix)]
+        else:
+            dynamic_search_paths = ["libboost_%s-mt.%s"%(name, lib_suffix),
                                 "libboost_%s.%s"%(name, lib_suffix)]
         static_search_paths = ["libboost_%s-mt.a"%(name),
                                "libboost_%s.a"%(name)]
     else:
-        dynamic_search_paths = ["libboost_%s*%s_%s*.%s"%(name, ver.major, ver.minor, lib_suffix),
+        if os.name == "nt":
+            dynamic_search_paths = ["boost_%s*%s_%s*.%s"%(name, ver.major, ver.minor, lib_suffix),
+                                "boost_%s-mt*.%s"%(name, lib_suffix),
+                                "boost_%s*.%s"%(name, lib_suffix)]
+        else:
+            dynamic_search_paths = ["libboost_%s*%s_%s*.%s"%(name, ver.major, ver.minor, lib_suffix),
                                 "libboost_%s-mt*.%s"%(name, lib_suffix),
                                 "libboost_%s*.%s"%(name, lib_suffix)]
         static_search_paths = ["libboost_%s*%s_%s*.a"%(name, ver.major, ver.minor),
@@ -227,7 +236,11 @@ def find_lib(ver, name, full_lib = link_static):
     # Boost.Python needs some special handling on some systems (Karmic), since it may have per-python-version libs
     if (name == "python"):
         python_ver = platform.python_version().split('.')
-        dynamic_search_paths = ["libboost_%s-mt-py%s%s.%s"%(name, python_ver[0], python_ver[1], lib_suffix),
+        if os.name == "nt":
+            dynamic_search_paths = ["boost_%s-mt-py%s%s.%s"%(name, python_ver[0], python_ver[1], lib_suffix),
+                                "boost_%s-py%s%s.%s"%(name, python_ver[0], python_ver[1], lib_suffix)] + dynamic_search_paths
+        else:
+            dynamic_search_paths = ["libboost_%s-mt-py%s%s.%s"%(name, python_ver[0], python_ver[1], lib_suffix),
                                 "libboost_%s-py%s%s.%s"%(name, python_ver[0], python_ver[1], lib_suffix)] + dynamic_search_paths
         static_search_paths = ["libboost_%s-mt-py%s%s.a"%(name, python_ver[0], python_ver[1]),
                                "libboost_%s-py%s%s.a"%(name, python_ver[0], python_ver[1])] + static_search_paths
@@ -272,7 +285,10 @@ def lib_flags(ver, name):
         return ' %s'%(lib)
     else:
         # Cut off "lib" and extension (.so/.a/.dylib/etc.)
-        return ' -l%s'%(os.path.splitext(lib)[0][len('lib'):])
+        if os.name == "nt":
+            return ' -l%s'%(lib)
+        else:
+            return ' -l%s'%(os.path.splitext(lib)[0][len('lib'):])
 
 def lflags(ver, libs):
     s= lib_dir_flags(ver) + " "
